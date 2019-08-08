@@ -1,5 +1,5 @@
 from __future__ import print_function
-
+import time
 import argparse
 import torch.backends.cudnn as cudnn
 import torch.nn.functional as F
@@ -96,15 +96,26 @@ timeit.timeit(benchmark_step, number=args.num_warmup_batches)
 # Benchmark
 log('Running benchmark...')
 img_secs = []
+elapTimes=[]
 for x in range(args.num_iters):
-    time = timeit.timeit(benchmark_step, number=args.num_batches_per_iter)
-    img_sec = args.batch_size * args.num_batches_per_iter / time
-    log('Iter #%d: %.1f img/sec per %s' % (x, img_sec, device))
-    img_secs.append(img_sec)
+  start=time.time()
+ # for y in range(args.num_batches_per_iter):
+ #   benchmark_step()
+ # end=time.time() 
+ # elapTime=end-start
+  elapTime = timeit.timeit(benchmark_step, number=args.num_batches_per_iter)
+  print("timeelapsed iter %d: %f"%(x,elapTime))
+  print("batch_size=%d , num_batches_per_iter=%d" %(args.batch_size,args.num_batches_per_iter))
+  img_sec = args.batch_size * args.num_batches_per_iter / elapTime
+  log('Iter #%d: %.1f img/sec per %s' % (x, img_sec, device))
+  img_secs.append(img_sec)
+  elapTimes.append(elapTime)
 
 # Results
-img_sec_mean = np.mean(img_secs)
+img_sec_mean = np.mean(img_sec)
+elapTime_mean = np.mean(elapTimes)
 img_sec_conf = 1.96 * np.std(img_secs)
+print("avg elapTime=%f" %(elapTime_mean))
 log('Img/sec per %s: %.1f +-%.1f' % (device, img_sec_mean, img_sec_conf))
 log('Total img/sec on %d %s(s): %.1f +-%.1f' %
     (hvd.size(), device, hvd.size() * img_sec_mean, hvd.size() * img_sec_conf))
